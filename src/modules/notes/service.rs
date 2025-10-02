@@ -1,22 +1,46 @@
 use std::sync::Arc;
+
+use async_trait::async_trait;
+use shaku::{Component, Interface};
 use uuid::Uuid;
 
+use super::{CreateNoteSchema, FilterOptions, UpdateNoteSchema, repository::NoteRepository};
 use crate::models::model::{NoteModel, NoteModelResponse};
-use super::{
-    repository::NoteRepository,
-    CreateNoteSchema, UpdateNoteSchema, FilterOptions,
-};
 
-pub struct NoteService {
-    repository: Arc<NoteRepository>,
+#[async_trait]
+pub trait NoteService: Interface + Send + Sync {
+    async fn get_notes(&self, opts: FilterOptions) -> Result<Vec<NoteModelResponse>, String>;
+    async fn create_note(&self, note_data: CreateNoteSchema) -> Result<NoteModelResponse, String>;
+    async fn update_note(
+        &self,
+        id: String,
+        note_data: UpdateNoteSchema,
+    ) -> Result<NoteModelResponse, String>;
 }
 
-impl NoteService {
-    pub fn new(repository: Arc<NoteRepository>) -> Self {
-        Self { repository }
-    }
+#[derive(Component)]
+#[shaku(interface = NoteService)]
+pub struct NoteServiceImpl {
+    #[shaku(inject)]
+    repository: Arc<dyn NoteRepository>,
+}
 
-    pub async fn get_notes(&self, opts: FilterOptions) -> Result<Vec<NoteModelResponse>, String> {
+impl NoteServiceImpl {
+    fn to_note_response(&self, note: &NoteModel) -> NoteModelResponse {
+        NoteModelResponse {
+            id: note.id.clone(),
+            title: note.title.clone(),
+            content: note.content.clone(),
+            is_published: note.is_published,
+            created_at: note.created_at,
+            updated_at: note.updated_at,
+        }
+    }
+}
+
+#[async_trait]
+impl NoteService for NoteServiceImpl {
+    async fn get_notes(&self, opts: FilterOptions) -> Result<Vec<NoteModelResponse>, String> {
         let limit = opts.limit.unwrap_or(10) as i32;
         let page = opts.page.unwrap_or(1);
         let offset = (page - 1) * limit as usize;
@@ -27,10 +51,13 @@ impl NoteService {
             .await
             .map_err(|e| format!("Database error: {}", e))?;
 
-        Ok(notes.iter().map(|note| self.to_note_response(note)).collect())
+        Ok(notes
+            .iter()
+            .map(|note| self.to_note_response(note))
+            .collect())
     }
 
-    pub async fn create_note(&self, note_data: CreateNoteSchema) -> Result<NoteModelResponse, String> {
+    async fn create_note(&self, note_data: CreateNoteSchema) -> Result<NoteModelResponse, String> {
         let id = Uuid::new_v4().to_string();
         let is_published = note_data.is_published.unwrap_or(false);
 
@@ -43,13 +70,12 @@ impl NoteService {
         Ok(self.to_note_response(&note))
     }
 
-    pub async fn update_note(
+    async fn update_note(
         &self,
         id: String,
         note_data: UpdateNoteSchema,
     ) -> Result<NoteModelResponse, String> {
-        let _uuid = Uuid::parse_str(&id)
-            .map_err(|e| format!("Invalid UUID format: {}", e))?;
+        let _uuid = Uuid::parse_str(&id).map_err(|e| format!("Invalid UUID format: {}", e))?;
 
         let existing_note = self
             .repository
@@ -68,16 +94,5 @@ impl NoteService {
             .map_err(|e| format!("Database error: {}", e))?;
 
         Ok(self.to_note_response(&updated_note))
-    }
-
-    fn to_note_response(&self, note: &NoteModel) -> NoteModelResponse {
-        NoteModelResponse {
-            id: note.id.clone(),
-            title: note.title.clone(),
-            content: note.content.clone(),
-            is_published: note.is_published,
-            created_at: note.created_at,
-            updated_at: note.updated_at,
-        }
     }
 }

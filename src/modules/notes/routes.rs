@@ -1,10 +1,13 @@
 use std::sync::Arc;
 
-use axum::{routing::{get, post, put}, Router};
+use axum::{
+    Router,
+    routing::{get, post, put},
+};
 
 use super::{
-    handler::{create_note_handler, get_list_note_handler, update_note_handler},
     AppState,
+    handler::{create_note_handler, get_list_note_handler, update_note_handler},
 };
 
 pub fn create_notes_router(app_state: Arc<AppState>) -> Router {

@@ -1,14 +1,23 @@
 use std::sync::Arc;
+
 use serde::{Deserialize, Serialize};
+use shaku::module;
 use utoipa::ToSchema;
 
 pub mod handler;
-pub mod service;
-pub mod routes;
 pub mod repository;
+pub mod routes;
+pub mod service;
 
+pub use repository::{NoteRepositoryImpl, NoteRepositoryImplParameters};
 pub use service::NoteService;
-pub use repository::NoteRepository;
+
+module! {
+    pub NotesModule {
+        components = [repository::NoteRepositoryImpl, service::NoteServiceImpl],
+        providers = []
+    }
+}
 
 #[derive(Deserialize, Debug, Default, ToSchema)]
 pub struct FilterOptions {
@@ -32,5 +41,5 @@ pub struct UpdateNoteSchema {
 }
 
 pub struct AppState {
-    pub note_service: Arc<NoteService>,
+    pub note_service: Arc<dyn NoteService>,
 }

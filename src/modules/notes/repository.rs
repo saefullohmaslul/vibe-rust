@@ -1,18 +1,40 @@
 use std::sync::Arc;
+
+use async_trait::async_trait;
+use shaku::{Component, Interface};
 use sqlx::PgPool;
 
 use crate::models::model::NoteModel;
 
-pub struct NoteRepository {
+#[async_trait]
+pub trait NoteRepository: Interface + Send + Sync {
+    async fn get_all_notes(&self, limit: i32, offset: i32) -> Result<Vec<NoteModel>, sqlx::Error>;
+    async fn create_note(
+        &self,
+        id: &str,
+        title: &str,
+        content: &str,
+        is_published: bool,
+    ) -> Result<NoteModel, sqlx::Error>;
+    async fn get_by_id(&self, id: &str) -> Result<NoteModel, sqlx::Error>;
+    async fn update_note(
+        &self,
+        id: &str,
+        title: &str,
+        content: &str,
+        is_published: bool,
+    ) -> Result<NoteModel, sqlx::Error>;
+}
+
+#[derive(Component)]
+#[shaku(interface = NoteRepository)]
+pub struct NoteRepositoryImpl {
     pool: Arc<PgPool>,
 }
 
-impl NoteRepository {
-    pub fn new(pool: Arc<PgPool>) -> Self {
-        Self { pool }
-    }
-
-    pub async fn get_all_notes(&self, limit: i32, offset: i32) -> Result<Vec<NoteModel>, sqlx::Error> {
+#[async_trait]
+impl NoteRepository for NoteRepositoryImpl {
+    async fn get_all_notes(&self, limit: i32, offset: i32) -> Result<Vec<NoteModel>, sqlx::Error> {
         sqlx::query_as::<_, NoteModel>(
             "SELECT id, title, content, is_published, created_at, updated_at FROM notes LIMIT $1 OFFSET $2",
         )
@@ -22,7 +44,7 @@ impl NoteRepository {
         .await
     }
 
-    pub async fn create_note(
+    async fn create_note(
         &self,
         id: &str,
         title: &str,
@@ -54,7 +76,7 @@ impl NoteRepository {
         .await
     }
 
-    pub async fn get_by_id(&self, id: &str) -> Result<NoteModel, sqlx::Error> {
+    async fn get_by_id(&self, id: &str) -> Result<NoteModel, sqlx::Error> {
         sqlx::query_as::<_, NoteModel>(
             "SELECT id, title, content, is_published, created_at, updated_at FROM notes WHERE id = $1",
         )
@@ -63,7 +85,7 @@ impl NoteRepository {
         .await
     }
 
-    pub async fn update_note(
+    async fn update_note(
         &self,
         id: &str,
         title: &str,

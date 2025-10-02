@@ -1,12 +1,13 @@
 use std::sync::Arc;
 
-use axum::{extract::{Path, Query, State}, http::StatusCode, response::IntoResponse, Json};
-
-use super::{
-    AppState, CreateNoteSchema, FilterOptions, UpdateNoteSchema,
+use axum::{
+    Json,
+    extract::{Path, Query, State},
+    http::StatusCode,
+    response::IntoResponse,
 };
 
-
+use super::{AppState, CreateNoteSchema, FilterOptions, UpdateNoteSchema};
 
 #[utoipa::path(
     get,
@@ -27,16 +28,14 @@ pub async fn get_list_note_handler(
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
     let note_service = data.note_service.clone();
 
-    let notes = note_service.get_notes(opts)
-        .await
-        .map_err(|e| {
-            let error_response = serde_json::json!({
-                "status": "error",
-                "message": e,
-            });
+    let notes = note_service.get_notes(opts).await.map_err(|e| {
+        let error_response = serde_json::json!({
+            "status": "error",
+            "message": e,
+        });
 
-            (StatusCode::INTERNAL_SERVER_ERROR, Json(error_response))
-        })?;
+        (StatusCode::INTERNAL_SERVER_ERROR, Json(error_response))
+    })?;
 
     let json_response = serde_json::json!({
         "status": "OK",
@@ -63,15 +62,13 @@ pub async fn create_note_handler(
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
     let note_service = data.note_service.clone();
 
-    let created_note = note_service.create_note(note)
-        .await
-        .map_err(|e| {
-            let error_response = serde_json::json!({
-                "status": "error",
-                "message": e,
-            });
-            (StatusCode::INTERNAL_SERVER_ERROR, Json(error_response))
-        })?;
+    let created_note = note_service.create_note(note).await.map_err(|e| {
+        let error_response = serde_json::json!({
+            "status": "error",
+            "message": e,
+        });
+        (StatusCode::INTERNAL_SERVER_ERROR, Json(error_response))
+    })?;
 
     let json_response = serde_json::json!({
         "status": "OK",
@@ -103,20 +100,18 @@ pub async fn update_note_handler(
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
     let note_service = data.note_service.clone();
 
-    let updated_note = note_service.update_note(id, note)
-        .await
-        .map_err(|e| {
-            let error_response = serde_json::json!({
-                "status": "error",
-                "message": e,
-            });
+    let updated_note = note_service.update_note(id, note).await.map_err(|e| {
+        let error_response = serde_json::json!({
+            "status": "error",
+            "message": e,
+        });
 
-            if e.contains("Invalid UUID format") {
-                (StatusCode::BAD_REQUEST, Json(error_response))
-            } else {
-                (StatusCode::INTERNAL_SERVER_ERROR, Json(error_response))
-            }
-        })?;
+        if e.contains("Invalid UUID format") {
+            (StatusCode::BAD_REQUEST, Json(error_response))
+        } else {
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(error_response))
+        }
+    })?;
 
     let json_response = serde_json::json!({
         "status": "OK",
@@ -126,5 +121,3 @@ pub async fn update_note_handler(
 
     Ok(Json(json_response))
 }
-
-
