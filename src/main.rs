@@ -5,17 +5,17 @@ use axum::{
     http::{Method, header::CONTENT_TYPE},
 };
 use dotenvy::dotenv;
-use shaku::HasComponent;
+use shaku::{HasComponent, HasProvider};
 use sqlx::postgres::PgPoolOptions;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
+mod infrastructure;
 mod models;
 mod modules;
 
-use modules::notes::{
-    AppState, NoteRepositoryImpl, NoteRepositoryImplParameters, NoteService, NotesModule,
-};
+use infrastructure::database::{PgPoolComponent, PgPoolComponentParameters, PgPoolProvider};
+use modules::notes::{AppState, NoteService, NotesModule, create_notes_router};
 use tower_http::cors::{Any, CorsLayer};
 
 #[derive(OpenApi)]
@@ -41,8 +41,7 @@ use tower_http::cors::{Any, CorsLayer};
 )]
 struct ApiDoc;
 
-use modules::commons::routes::create_commons_router;
-use modules::notes::routes::create_notes_router;
+use modules::commons::create_commons_router;
 
 #[tokio::main]
 async fn main() {
@@ -69,10 +68,16 @@ async fn main() {
     let pool = Arc::new(pool);
 
     let notes_module = NotesModule::builder()
-        .with_component_parameters::<NoteRepositoryImpl>(NoteRepositoryImplParameters {
+        .with_component_parameters::<PgPoolComponent>(PgPoolComponentParameters {
             pool: Arc::clone(&pool),
         })
         .build();
+
+    let pool_provider: Arc<dyn PgPoolProvider> = notes_module
+        .provide()
+        .map(Arc::from)
+        .expect("PgPool provider must be available");
+    let _ = pool_provider.get_pool();
 
     let note_service: Arc<dyn NoteService> = notes_module.resolve();
     let app_state = Arc::new(AppState { note_service });

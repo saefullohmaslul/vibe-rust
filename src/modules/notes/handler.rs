@@ -1,13 +1,22 @@
 use std::sync::Arc;
 
 use axum::{
-    Json,
+    Json, Router,
     extract::{Path, Query, State},
     http::StatusCode,
     response::IntoResponse,
+    routing::{get, post, put},
 };
 
 use super::{AppState, CreateNoteSchema, FilterOptions, UpdateNoteSchema};
+
+pub fn create_notes_router(app_state: Arc<AppState>) -> Router {
+    Router::new()
+        .route("/notes", get(get_list_note_handler))
+        .route("/notes", post(create_note_handler))
+        .route("/notes/{id}", put(update_note_handler))
+        .with_state(app_state)
+}
 
 #[utoipa::path(
     get,

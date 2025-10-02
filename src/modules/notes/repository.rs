@@ -2,9 +2,8 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use shaku::{Component, Interface};
-use sqlx::PgPool;
 
-use crate::models::model::NoteModel;
+use crate::{infrastructure::database::DatabasePool, models::model::NoteModel};
 
 #[async_trait]
 pub trait NoteRepository: Interface + Send + Sync {
@@ -29,18 +28,20 @@ pub trait NoteRepository: Interface + Send + Sync {
 #[derive(Component)]
 #[shaku(interface = NoteRepository)]
 pub struct NoteRepositoryImpl {
-    pool: Arc<PgPool>,
+    #[shaku(inject)]
+    pool: Arc<dyn DatabasePool>,
 }
 
 #[async_trait]
 impl NoteRepository for NoteRepositoryImpl {
     async fn get_all_notes(&self, limit: i32, offset: i32) -> Result<Vec<NoteModel>, sqlx::Error> {
+        let pool = self.pool.get_pool();
         sqlx::query_as::<_, NoteModel>(
             "SELECT id, title, content, is_published, created_at, updated_at FROM notes LIMIT $1 OFFSET $2",
         )
         .bind(limit)
         .bind(offset)
-        .fetch_all(&*self.pool)
+        .fetch_all(pool.as_ref())
         .await
     }
 
@@ -51,6 +52,7 @@ impl NoteRepository for NoteRepositoryImpl {
         content: &str,
         is_published: bool,
     ) -> Result<NoteModel, sqlx::Error> {
+        let pool = self.pool.get_pool();
         sqlx::query_as::<_, NoteModel>(
             "
         INSERT INTO notes (
@@ -72,16 +74,17 @@ impl NoteRepository for NoteRepositoryImpl {
         .bind(title)
         .bind(content)
         .bind(is_published)
-        .fetch_one(&*self.pool)
+        .fetch_one(pool.as_ref())
         .await
     }
 
     async fn get_by_id(&self, id: &str) -> Result<NoteModel, sqlx::Error> {
+        let pool = self.pool.get_pool();
         sqlx::query_as::<_, NoteModel>(
             "SELECT id, title, content, is_published, created_at, updated_at FROM notes WHERE id = $1",
         )
         .bind(id)
-        .fetch_one(&*self.pool)
+        .fetch_one(pool.as_ref())
         .await
     }
 
@@ -92,6 +95,7 @@ impl NoteRepository for NoteRepositoryImpl {
         content: &str,
         is_published: bool,
     ) -> Result<NoteModel, sqlx::Error> {
+        let pool = self.pool.get_pool();
         sqlx::query_as::<_, NoteModel>(
             "
         UPDATE notes
@@ -114,7 +118,7 @@ impl NoteRepository for NoteRepositoryImpl {
         .bind(title)
         .bind(content)
         .bind(is_published)
-        .fetch_one(&*self.pool)
+        .fetch_one(pool.as_ref())
         .await
     }
 }

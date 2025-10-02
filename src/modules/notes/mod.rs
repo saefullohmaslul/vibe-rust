@@ -4,18 +4,19 @@ use serde::{Deserialize, Serialize};
 use shaku::module;
 use utoipa::ToSchema;
 
+use crate::infrastructure::database::{PgPoolComponent, PgPoolProviderImpl};
+
 pub mod handler;
 pub mod repository;
-pub mod routes;
 pub mod service;
 
-pub use repository::{NoteRepositoryImpl, NoteRepositoryImplParameters};
+pub use handler::create_notes_router;
 pub use service::NoteService;
 
 module! {
     pub NotesModule {
-        components = [repository::NoteRepositoryImpl, service::NoteServiceImpl],
-        providers = []
+        components = [PgPoolComponent, repository::NoteRepositoryImpl, service::NoteServiceImpl],
+        providers = [PgPoolProviderImpl]
     }
 }
 

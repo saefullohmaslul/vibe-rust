@@ -1,5 +1,8 @@
-use axum::Json;
-use axum::response::IntoResponse;
+use axum::{Json, Router, response::IntoResponse, routing::get};
+
+pub fn create_commons_router() -> Router {
+    Router::new().route("/health", get(health))
+}
 
 #[utoipa::path(
     get,
