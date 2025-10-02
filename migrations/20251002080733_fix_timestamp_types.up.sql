@@ -1,0 +1,4 @@
+-- Fix timestamp types to use TIMESTAMPTZ
+ALTER TABLE notes
+ALTER COLUMN created_at TYPE TIMESTAMPTZ,
+ALTER COLUMN updated_at TYPE TIMESTAMPTZ;
