@@ -111,27 +111,38 @@ impl NoteService {
 - Transaction management
 - Consistent business rule enforcement
 
-### 3. Dependency Injection
+### 3. Shaku Dependency Injection
 
-**Purpose**: Provide loose coupling between components and improve testability.
+**Purpose**: Provide compile-time dependency injection with loose coupling and improved testability.
 
 **Implementation**:
 ```rust
-pub struct AppState {
-    pub note_service: Arc<NoteService>,
+// Module definition
+module! {
+    pub NotesModule {
+        components = [PgPoolComponent, repository::NoteRepositoryImpl, service::NoteServiceImpl],
+        providers = [PgPoolProviderImpl]
+    }
 }
 
-// Injection in main.rs
-let note_repository = Arc::new(NoteRepository::new(Arc::new(pool)));
-let note_service = Arc::new(NoteService::new(note_repository));
+// Component resolution in main.rs
+let notes_module = NotesModule::builder()
+    .with_component_parameters::<PgPoolComponent>(PgPoolComponentParameters {
+        pool: Arc::clone(&pool),
+    })
+    .build();
+
+let note_service: Arc<dyn NoteService> = notes_module.resolve();
 let app_state = Arc::new(AppState { note_service });
 ```
 
 **Benefits**:
+- Compile-time dependency verification
 - Easy unit testing with mock dependencies
 - Loose coupling between components
 - Centralized dependency management
-- Better modularity and reusability
+- Interface-based programming
+- Automatic component lifetime management
 
 ### 4. Data Transfer Object (DTO) Pattern
 
@@ -414,7 +425,10 @@ DATABASE_URL=postgresql://...
 
 ```
 src/
-├── main.rs                 # Application bootstrap
+├── main.rs                 # Application bootstrap + Shaku DI setup
+├── infrastructure/         # Infrastructure layer
+│   ├── mod.rs             # Module exports
+│   └── database.rs        # Database connection and pooling (Shaku component)
 ├── models/                 # Data models
 │   ├── mod.rs             # Module exports
 │   └── model.rs           # Database/response models
@@ -422,15 +436,37 @@ src/
     ├── mod.rs             # Module registry
     ├── commons/           # Shared utilities
     │   ├── mod.rs
-    │   ├── handler.rs     # Health checks
-    │   └── routes.rs      # Common routes
+    │   └── handler.rs     # Health checks + common routes
     └── notes/             # Notes module
-        ├── mod.rs         # Module exports + DTOs
+        ├── mod.rs         # Module exports + DTOs + AppState + Shaku module
         ├── handler.rs     # HTTP handlers
-        ├── service.rs     # Business logic
-        ├── repository.rs  # Data access
-        └── routes.rs      # Route configuration
+        ├── service.rs     # Business logic (Shaku component)
+        └── repository.rs  # Data access (Shaku component)
 ```
+
+### Shaku Dependency Injection Architecture
+
+**Module Structure**:
+```rust
+module! {
+    pub NotesModule {
+        components = [PgPoolComponent, repository::NoteRepositoryImpl, service::NoteServiceImpl],
+        providers = [PgPoolProviderImpl]
+    }
+}
+```
+
+**Component Registration**:
+- `PgPoolComponent`: Database connection pool provider
+- `NoteRepositoryImpl`: Repository implementation
+- `NoteServiceImpl`: Service implementation
+- `PgPoolProviderImpl`: Provider interface for database access
+
+**DI Benefits**:
+- Loose coupling between components
+- Easy unit testing with mock dependencies
+- Centralized dependency management
+- Compile-time dependency verification
 
 ### Migration Architecture
 

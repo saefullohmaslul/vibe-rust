@@ -41,6 +41,34 @@ Environment variable loader. Reads configuration from `.env` files during develo
 ### tower-http (0.6.6)
 HTTP-specific middleware for Tower ecosystem. Provides commonly needed HTTP middleware including CORS (Cross-Origin Resource Sharing) handling for web APIs that need to serve clients from different origins.
 
+## Dependency Injection
+
+### shaku (0.6)
+A compile-time dependency injection framework for Rust. Provides:
+- Component-based architecture with interfaces and implementations
+- Compile-time dependency verification
+- Module system for organizing components
+- Provider pattern for dependency resolution
+
+### async-trait (0.1)
+Provides support for async functions in traits. Essential for defining async interfaces that can be implemented by different components in the dependency injection system.
+
+## API Documentation
+
+### utoipa (5.4.0)
+OpenAPI specification generation library with Rust derive macros. Features:
+- Automatic OpenAPI schema generation from Rust structs
+- Support for Axum framework integration
+- Chrono datetime serialization support
+- Type-safe API documentation
+
+### utoipa-swagger-ui (9.0.2)
+Swagger UI integration for serving interactive API documentation. Provides:
+- Web-based API explorer
+- Real-time API testing
+- Auto-generated documentation from OpenAPI specs
+- Axum framework integration
+
 ## Infrastructure
 
 ### PostgreSQL (16)
@@ -67,4 +95,7 @@ These dependencies form a complete stack for building modern web APIs in Rust:
 - **serde** family manages data serialization
 - **dotenvy** handles configuration including database credentials
 - **tower-http** provides HTTP middleware like CORS
+- **shaku** provides compile-time dependency injection
+- **async-trait** enables async trait methods
+- **utoipa** generates API documentation automatically
 - **postgresql** serves as the relational database backend

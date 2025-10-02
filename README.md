@@ -5,7 +5,7 @@ A modern RESTful API for note management built with Rust, Axum framework, and Po
 ## 🚀 Features
 
 - **RESTful API**: Complete CRUD operations for notes management
-- **Modern Architecture**: Clean modular design with separation of concerns
+- **Modern Architecture**: Clean modular design with Shaku dependency injection
 - **Database Integration**: PostgreSQL with connection pooling and migrations
 - **API Documentation**: Auto-generated OpenAPI/Swagger documentation
 - **Type Safety**: Compile-time guarantees with Rust's type system
@@ -13,6 +13,7 @@ A modern RESTful API for note management built with Rust, Axum framework, and Po
 - **Input Validation**: Request validation and type-safe serialization
 - **CORS Support**: Cross-origin resource sharing configuration
 - **Health Checks**: Application health monitoring endpoint
+- **Dependency Injection**: Compile-time DI with trait-based components
 
 ## 📋 Prerequisites
 
@@ -301,7 +302,10 @@ DATABASE_URL=postgresql://postgres:12345678@127.0.0.1:5432/rust_axum_sqlx
 ```
 vibe-rust/
 ├── src/
-│   ├── main.rs                 # Application entry point
+│   ├── main.rs                 # Application entry point + Shaku DI setup
+│   ├── infrastructure/         # Infrastructure layer
+│   │   ├── mod.rs             # Infrastructure module declaration
+│   │   └── database.rs        # Database connection and pooling (Shaku component)
 │   ├── models/                 # Data models and schemas
 │   │   ├── mod.rs             # Models module declaration
 │   │   └── model.rs           # Database models and response schemas
@@ -309,18 +313,17 @@ vibe-rust/
 │       ├── mod.rs             # Modules module declaration
 │       ├── commons/           # Common utilities and health checks
 │       │   ├── mod.rs         # Commons module declaration
-│       │   ├── handler.rs     # Health check handlers
-│       │   └── routes.rs      # Commons routing configuration
+│       │   └── handler.rs     # Health check handlers + routing
 │       └── notes/             # Notes management module
-│           ├── mod.rs         # Notes module declaration and schemas
+│           ├── mod.rs         # Notes module declaration + DTOs + Shaku module
 │           ├── handler.rs     # HTTP request handlers
-│           ├── service.rs     # Business logic layer
-│           ├── repository.rs  # Data access layer
-│           └── routes.rs      # Notes routing configuration
+│           ├── service.rs     # Business logic layer (Shaku component)
+│           └── repository.rs  # Data access layer (Shaku component)
 ├── migrations/                # Database migration files
 ├── docs/                      # Documentation
 │   ├── MODULE.md             # Module documentation
-│   └── ARCHITECTURE.md       # System architecture documentation
+│   ├── ARCHITECTURE.md       # System architecture documentation
+│   └── DEPENDENCY.md         # Dependency documentation
 ├── docker-compose.yml         # Docker configuration
 ├── Makefile                   # Development commands and utilities
 ├── Cargo.toml                 # Rust dependencies
@@ -332,6 +335,7 @@ vibe-rust/
 
 - **[Module Documentation](docs/MODULE.md)** - Detailed explanation of all modules
 - **[Architecture Documentation](docs/ARCHITECTURE.md)** - System architecture and design patterns
+- **[Dependency Documentation](docs/DEPENDENCY.md)** - Complete dependency overview and usage
 - **API Documentation** - Interactive Swagger UI at `/swagger-ui`
 
 ## 🧪 Testing
@@ -375,6 +379,8 @@ make fmt && make lint && make test
 - **`serde`** - Serialization/deserialization framework
 - **`uuid`** - UUID generation and parsing
 - **`chrono`** - Date and time handling
+- **`shaku`** - Compile-time dependency injection framework
+- **`async-trait`** - Async trait support for DI interfaces
 
 ### API Documentation
 - **`utoipa`** - OpenAPI specification generation
@@ -385,7 +391,7 @@ make fmt && make lint && make test
 - **`tower-http`** - HTTP middleware (CORS)
 
 ### Database
-- **`PostgreSQL`** - Primary database with connection pooling
+- **`PostgreSQL`** - Primary database with Shaku-managed connection pooling
 
 ## 🚀 Deployment
 
@@ -424,9 +430,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🔍 Architecture Highlights
 
 - **Clean Architecture**: Clear separation between presentation, business logic, and data access layers
+- **Shaku Dependency Injection**: Compile-time DI with trait-based components
 - **Repository Pattern**: Abstract data access with testable interfaces
 - **Service Layer**: Business logic encapsulation
-- **Dependency Injection**: Loose coupling and improved testability
+- **Component-Based Architecture**: Modular, reusable components
 - **Error Handling**: Comprehensive error management with proper HTTP status codes
 - **Type Safety**: Leverages Rust's type system for compile-time guarantees
 - **Performance**: Async non-blocking operations with connection pooling
