@@ -1,10 +1,28 @@
 use axum::{response::IntoResponse, routing::get, Json, Router};
+use dotenvy::dotenv;
+use sqlx::{postgres::PgPoolOptions};
 
 
 
 #[tokio::main]
 async fn main() {
-    let app = Router::new().route("/health", get(health));
+    dotenv().ok();
+
+    let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let _pool = match PgPoolOptions::new()
+        .max_connections(5)
+        .connect(&database_url)
+        .await
+    {
+        Ok(pool) => pool,
+        Err(e) => {
+            eprintln!("Failed to connect to database: {:?}", e);
+            std::process::exit(1);
+        }
+    };
+
+    let app = Router::new()
+        .route("/health", get(health));
 
     println!("Server is running on port 8080");
 

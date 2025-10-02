@@ -41,12 +41,30 @@ Environment variable loader. Reads configuration from `.env` files during develo
 ### tower-http (0.6.6)
 HTTP-specific middleware for Tower ecosystem. Provides commonly needed HTTP middleware including CORS (Cross-Origin Resource Sharing) handling for web APIs that need to serve clients from different origins.
 
+## Infrastructure
+
+### PostgreSQL (16)
+Relational database management system used as the primary data store for the application. PostgreSQL provides robust SQL capabilities, ACID compliance, and excellent performance for both OLTP and analytical workloads. The application uses PostgreSQL 16 running in a Docker container for consistent development and deployment environments.
+
+#### Configuration (docker-compose.yml)
+- **Container**: `rust_postgres`
+- **Image**: `postgres:16`
+- **Port**: `5432:5432` (host:container)
+- **Volume**: `postgres_data:/var/lib/postgresql/data` for persistent storage
+- **Restart Policy**: `unless-stopped`
+
+#### Environment Variables (.env)
+- **Database**: `rust_axum_sqlx`
+- **User**: `postgres`
+- **Connection URL**: `postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@127.0.0.1:5432/${POSTGRES_DATABASE}`
+
 ## Usage Summary
 
 These dependencies form a complete stack for building modern web APIs in Rust:
 - **axum** provides the web server framework
 - **tokio** powers the async runtime
-- **sqlx** handles database operations
+- **sqlx** handles database operations with PostgreSQL
 - **serde** family manages data serialization
-- **dotenvy** handles configuration
+- **dotenvy** handles configuration including database credentials
 - **tower-http** provides HTTP middleware like CORS
+- **postgresql** serves as the relational database backend
